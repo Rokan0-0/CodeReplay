@@ -8,17 +8,29 @@
   },
   "categories": [
     "Other"
-  ],
-  "activationEvents": [],
+],
+   "activationEvents": [
+  "onCommand:codereplay.startRecording",
+  "onCommand:codereplay.stopRecording",
+  "onCommand:codereplay.startPlayback"
+],
   "main": "./out/extension.js",
-  "contributes": {
-    "commands": [
-      {
-        "command": "codereplay.helloWorld",
-        "title": "Hello World"
-      }
-    ]
-  },
+ "contributes": {
+  "commands": [
+    {
+      "command": "codereplay.startRecording",
+      "title": "CodeReplay: Start Recording"
+    },
+    {
+      "command": "codereplay.stopRecording",
+      "title": "CodeReplay: Stop Recording"
+    },
+    {
+      "command": "codereplay.startPlayback",
+      "title": "CodeReplay: Start Playback"
+    }
+  ]
+},
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
