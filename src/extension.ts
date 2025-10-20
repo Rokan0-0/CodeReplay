@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-// Import Node.js modules for handling file paths and the file system
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -12,38 +11,77 @@ type CodeEvent = {
     rangeLength?: number;
 };
 
-// This will store our recorded events in memory.
+// --- Global Variables ---
 let eventLog: CodeEvent[] = [];
 let isRecording = false;
 
+// We declare our new UI buttons here so they can be accessed from anywhere
+let recordButton: vscode.StatusBarItem;
+let playButton: vscode.StatusBarItem;
+
+
+// --- Helper Function ---
 function delay(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// --- Activation Function (Main Logic) ---
 export function activate(context: vscode.ExtensionContext) {
     console.log('Congratulations, your extension "CodeReplay" is now active!');
 
-    // === RECORDING COMMANDS (Unchanged) ===
+    // === 1. CREATE THE UI BUTTONS ===
+
+    // Create the Record button
+    recordButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    recordButton.command = 'codereplay.startRecording'; // The command it runs on click
+    recordButton.text = `$(circle-filled) Record`; // Uses a built-in icon
+    recordButton.tooltip = 'Start Recording Session';
+    recordButton.show(); // Make it visible
+    context.subscriptions.push(recordButton); // Add to disposable list
+
+    // Create the Play button
+    playButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 99);
+    playButton.command = 'codereplay.startPlayback';
+    playButton.text = `$(play) Play`;
+    playButton.tooltip = 'Start Playback Session';
+    playButton.show();
+    context.subscriptions.push(playButton);
+
+
+    // === 2. REGISTER THE COMMANDS ===
+
+    // Start Recording Command
     const startRecordingCommand = vscode.commands.registerCommand('codereplay.startRecording', () => {
         eventLog = [];
         isRecording = true;
         vscode.window.showInformationMessage('CodeReplay: Recording started!');
+
+        // Update the UI
+        recordButton.text = `$(debug-stop) Stop`; // Change to a "Stop" button
+        recordButton.command = 'codereplay.stopRecording'; // Change the command
+        recordButton.tooltip = 'Stop Recording Session';
+        playButton.hide(); // Hide the play button while recording
     });
 
+    // Stop Recording Command
     const stopRecordingCommand = vscode.commands.registerCommand('codereplay.stopRecording', () => {
         isRecording = false;
         vscode.window.showInformationMessage(`CodeReplay: Recording stopped. Captured ${eventLog.length} events.`);
-        console.log("--- Event Log Captured ---", eventLog);
+
+        // Reset the UI
+        recordButton.text = `$(circle-filled) Record`;
+        recordButton.command = 'codereplay.startRecording';
+        recordButton.tooltip = 'Start Recording Session';
+        playButton.show(); // Show the play button again
     });
 
-    // === THE NEW PLAYBACK COMMAND ===
+    // Playback Command (Logic is unchanged, just moved)
     const startPlaybackCommand = vscode.commands.registerCommand('codereplay.startPlayback', async () => {
         if (eventLog.length === 0) {
             vscode.window.showInformationMessage('CodeReplay: No recording to play back.');
             return;
         }
 
-        // Get the root folder of the current workspace
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (!workspaceFolders) {
             vscode.window.showErrorMessage('CodeReplay: You must be in a workspace (folder) to run playback.');
@@ -54,39 +92,25 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage('CodeReplay: Playback starting in 3 seconds...');
         await delay(3000);
 
-        // This map will store our *new* playback file paths
-        // Key: Original file URI (e.g., "file:///.../index.html")
-        // Value: New file URI (e.g., "file:///.../index(playback).html")
         const playbackFileMap = new Map<string, vscode.Uri>();
-
-        // This map will store the open editors for our new playback files
         const openEditors = new Map<string, vscode.TextEditor>();
 
         for (const event of eventLog) {
             let playbackFileUri = playbackFileMap.get(event.file);
 
-            // If this is the first time we've seen this file, create its playback clone
             if (!playbackFileUri) {
                 const originalUri = vscode.Uri.parse(event.file);
-                
-                // Parse the original filename
                 const originalPath = originalUri.fsPath;
                 const fileInfo = path.parse(originalPath);
-                
-                // Create the new name: "index" + "(playback)" + ".html"
                 const playbackName = `${fileInfo.name}(playback)${fileInfo.ext}`;
-                
-                // Create the new file's full path
                 const playbackPath = path.join(workspaceRoot, playbackName);
                 
-                // Create the file on disk (it's empty for now)
                 fs.writeFileSync(playbackPath, ''); 
                 
                 playbackFileUri = vscode.Uri.file(playbackPath);
-                playbackFileMap.set(event.file, playbackFileUri); // Save it for next time
+                playbackFileMap.set(event.file, playbackFileUri);
             }
 
-            // Now, open the *new* playback file
             let editor = openEditors.get(playbackFileUri.toString());
             
             if (!editor || vscode.window.activeTextEditor?.document.uri.toString() !== playbackFileUri.toString()) {
@@ -95,7 +119,6 @@ export function activate(context: vscode.ExtensionContext) {
                 openEditors.set(playbackFileUri.toString(), editor);
             }
             
-            // Apply the edit as usual
             if (event.type === 'edit' && event.range) {
                 const start = new vscode.Position(event.range.start.line, event.range.start.character);
                 const end = new vscode.Position(event.range.end.line, event.range.end.character);
@@ -110,15 +133,19 @@ export function activate(context: vscode.ExtensionContext) {
                     }
                 });
                 
-                await delay(50); // Keystroke speed
+                await delay(50);
             } else if (event.type === 'switch_file') {
-                await delay(200); // File switch speed
+                await delay(200);
             }
         }
         vscode.window.showInformationMessage('CodeReplay: Playback finished!');
     });
 
-    // === EVENT LISTENERS (Unchanged) ===
+    // === 3. SUBSCRIBE ALL COMMANDS ===
+    context.subscriptions.push(startRecordingCommand, stopRecordingCommand, startPlaybackCommand);
+
+
+    // === 4. EVENT LISTENERS (Unchanged) ===
     vscode.workspace.onDidChangeTextDocument(event => {
         if (isRecording && event.contentChanges.length > 0 && !event.document.isUntitled) {
             const timestamp = new Date().toISOString();
@@ -141,8 +168,11 @@ export function activate(context: vscode.ExtensionContext) {
             eventLog.push({ type: 'switch_file', timestamp, file });
         }
     });
+}
 
-    context.subscriptions.push(startRecordingCommand, stopRecordingCommand, startPlaybackCommand);
-}   
-
-export function deactivate() {}
+export function deactivate() {
+    // This function is called when the extension is deactivated
+    // We should hide our buttons
+    recordButton.dispose();
+    playButton.dispose();
+}
