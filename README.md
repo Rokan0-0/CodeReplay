@@ -24,7 +24,7 @@ Stop re-recording your tutorials because of a typo. CodeReplay records your codi
 
 ### ## The Workflow in Action
 
-*(This is where you will add your "Killer GIF" after you make it!)*
+![CodeReplay Demo](images/demo.gif)
 
 `[Image or GIF of the extension working]`
 
