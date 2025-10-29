@@ -1,8 +1,14 @@
 {
 	"name": "codereplay",
 	"displayName": "CodeReplay",
-	"description": "Records and replays coding sessions for creating tutorials.",
-	"version": "0.0.1",
+	"description": "Record your coding session once and play back a perfect, clean timelapse for your tutorials.",
+	"version": "0.1.0",
+    "publisher": "4w2LWOSKbdgto2Yla0tDJaWuWdA3rXtxJ6XAEf5SBZAXfmyoscaWJQQJ99BJACAAAAAAAAAAAAAGAZDO6Ldo", 
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Rokan0-0/CodeReplay.git" 
+    },
+    "icon": "images/icon.png", 
 	"engines": {
 		"vscode": "^1.83.0"
 	},
@@ -10,27 +16,29 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:codereplay.startRecording",
-		"onCommand:codereplay.stopRecording",
-		"onCommand:codereplay.startPlayback"
-	],
+    "onStartupFinished"
+],
 	"main": "./out/extension.js",
 	"contributes": {
-		"commands": [
-			{
-				"command": "codereplay.startRecording",
-				"title": "CodeReplay: Start Recording"
-			},
-			{
-				"command": "codereplay.stopRecording",
-				"title": "CodeReplay: Stop Recording"
-			},
-			{
-				"command": "codereplay.startPlayback",
-				"title": "CodeReplay: Start Playback"
-			}
-		]
-	},
+  "commands": [
+    {
+      "command": "codereplay.startRecording",
+      "title": "CodeReplay: Start Recording"
+    },
+    {
+      "command": "codereplay.stopRecording",
+      "title": "CodeReplay: Stop Recording"
+    },
+    {
+      "command": "codereplay.startPlayback",
+      "title": "CodeReplay: Start Playback"
+    },
+    {
+      "command": "codereplay.cleanPlaybackFiles",
+      "title": "CodeReplay: Clean Playback Files"
+    }
+  ]
+},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -p ./",
