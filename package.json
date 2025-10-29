@@ -3,7 +3,7 @@
 	"displayName": "CodeReplay",
 	"description": "Record your coding session once and play back a perfect, clean timelapse for your tutorials.",
 	"version": "0.1.0",
-    "publisher": "REDACTED_PUBLISHER_ID",
+    "publisher": "rokan0-0",
     "repository": {
         "type": "git",
         "url": "https://github.com/Rokan0-0/CodeReplay.git" 
